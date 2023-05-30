@@ -84,7 +84,6 @@ public class NotificationService {
                 smsDetails.put("orgName", orgDetails.get("orgNames").get(0));
                 smsDetails.put("personName", orgDetails.get("personNames").get(i));
                 smsDetails.put("mobileNumber", orgDetails.get("mobileNumbers").get(i));
-                smsDetails.put("CBOUrl", orgDetails.get("CBOUrl").get(0));
                 smsDetails.put("orgId", organisation.getOrgNumber());
 
 
@@ -110,16 +109,16 @@ public class NotificationService {
             return;
         }
 
-            //get orgName, ID, contactPerson, mobileNumber, cbo-url
-            log.info("get orgName, ID, contactPerson, mobileNumber, cbo-url");
-            Map<String, String> smsDetails = getSMSDetailsForUpdate(request);
+        //get orgName, ID, contactPerson, mobileNumber, cbo-url
+        log.info("get orgName, ID, contactPerson, mobileNumber, cbo-url");
+        Map<String, String> smsDetails = getSMSDetailsForUpdate(request);
 
-            log.info("build Message For update Action for " + smsDetails.get("orgName"));
-            String customizedMessage = buildMessageForUpdateAction(smsDetails, message);
-            SMSRequest smsRequest = SMSRequest.builder().mobileNumber(smsDetails.get("mobileNumber")).message(customizedMessage).build();
+        log.info("build Message For update Action for " + smsDetails.get("orgName"));
+        String customizedMessage = buildMessageForUpdateAction(smsDetails, message);
+        SMSRequest smsRequest = SMSRequest.builder().mobileNumber(smsDetails.get("mobileNumber")).message(customizedMessage).build();
 
-            log.info("push message for update Action");
-            producer.push(config.getSmsNotifTopic(), smsRequest);
+        log.info("push message for update Action");
+        producer.push(config.getSmsNotifTopic(), smsRequest);
     }
 
     private Map<String, List<String>> getDetailsForSMS(Organisation organisation) {
@@ -134,7 +133,6 @@ public class NotificationService {
         smsDetails.put("orgNames", Collections.singletonList(orgName));
         smsDetails.put("personNames", personNames);
         smsDetails.put("mobileNumbers", mobileNumbers);
-        smsDetails.put("CBOUrl", Collections.singletonList(CBOUrl));
 
 
         return smsDetails;
@@ -149,6 +147,7 @@ public class NotificationService {
         String tenantId=organisation.getTenantId();
         String CBOUrl = getShortnerURL(config.getCboUrlHost() + config.getCboUrlEndpoint());
 
+        String orgId= organisation.getApplicationNumber();
 
         //get name, mobileNumber from hrms
         log.info("get name, mobileNumber from hrms");
@@ -157,9 +156,8 @@ public class NotificationService {
         Map<String, String> smsDetails = new HashMap<>();
 
         smsDetails.put("orgNames", orgName);
-        smsDetails.put("personName", employeeDetails.get("userName"));
         smsDetails.put("mobileNumber", employeeDetails.get("mobileNumber"));
-        smsDetails.put("CBOUrl", CBOUrl);
+        smsDetails.put("orgId",orgId);
 
 
         return smsDetails;
@@ -200,16 +198,12 @@ public class NotificationService {
      * @return
      */
     public String buildMessageForCreateAction(Map<String, String> userDetailsForSMS, String message) {
-        message = message.replace("{individualName}", userDetailsForSMS.get("personName"))
-                .replace("{organisationName}", userDetailsForSMS.get("orgName"))
-                .replace("{ID}", userDetailsForSMS.get("orgId"))
-                .replace("{cbo_portal_url}", userDetailsForSMS.get("CBOUrl"));
+        message = message.replace("{ID}", userDetailsForSMS.get("orgId"));
         return message;
     }
 
     public String buildMessageForUpdateAction(Map<String, String> userDetailsForSMS, String message) {
-        message = message.replace("{contactpersonname}", userDetailsForSMS.get("personName"))
-                .replace("{cbo_portal_url}", userDetailsForSMS.get("CBOUrl"));
+        message = message.replace("{orgID}", userDetailsForSMS.get("orgId"));
         return message;
     }
 
