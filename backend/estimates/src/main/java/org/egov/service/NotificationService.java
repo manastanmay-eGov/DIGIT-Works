@@ -206,18 +206,14 @@ public class NotificationService {
      * @return
      */
     public String buildMessageForRejectAction(Estimate estimate, Map<String, String> userDetailsForSMS, String message) {
-        message = message.replace("{estimate_no}", estimate.getEstimateNumber())
-                .replace("{project_name}", userDetailsForSMS.get("projectName"))
-                .replace("{location}", userDetailsForSMS.get("locationName"))
-                .replace("{username}", userDetailsForSMS.get("userName"))
-                .replace("{designation}", userDetailsForSMS.get("designation"));
+        message = message.replace("{estimteno} ", estimate.getEstimateNumber())
+                .replace("{projectid} ", estimate.getProject().getProjectNumber());
         return message;
     }
 
     public String buildMessageForApproveAction_Creator(Estimate estimate, Map<String, String> userDetailsForSMS, String message) {
         message = message.replace("{estimate_no}", estimate.getEstimateNumber())
-                .replace("{project_name}", userDetailsForSMS.get("projectName"))
-                .replace("{location}", userDetailsForSMS.get("locationName"));
+                .replace("{projectid} ", estimate.getProject().getProjectNumber());
         return message;
     }
 
