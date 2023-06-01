@@ -222,9 +222,6 @@ public class NotificationService {
         if(!additionalField.isEmpty()){
             WorksSmsRequest smsRequest=WorksSmsRequest.builder().message(customizedMessage).additionalFields(additionalField)
                     .mobileNumber(smsDetails.get("mobileNumber")).build();
-
-
-            System.out.println("SMS message:::::" + smsRequest.toString());
             log.info("SMS message:::::" + smsRequest.toString());
             producer.push(config.getMuktaNotificationTopic(), smsRequest);
 
