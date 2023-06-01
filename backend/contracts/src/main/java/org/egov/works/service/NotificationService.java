@@ -92,13 +92,13 @@ public class NotificationService {
         //get project number, location, userDetails
         log.info("get project number, location, userDetails");
         Map<String, String> smsDetails = getDetailsForSMS(request, createdByUuid);
+        Map<String, Object> additionalField = setAdditionalFields(request,ContractServiceConstants.CONTRACTS_REJECT_LOCALIZATION_CODE);
 
         log.info("build Message For Reject Action");
         message = buildMessageForRejectAction(contract, smsDetails, message);
-        SMSRequest smsRequest = SMSRequest.builder().mobileNumber(smsDetails.get("mobileNumber")).message(message).build();
-
         log.info("push message for REJECT Action");
-        producer.push(config.getSmsNotifTopic(), smsRequest);
+        checkAdditionalFieldAndPushONSmsTopic(message,additionalField,smsDetails);
+
     }
 
     private void pushNotificationToCreatorForApproveAction(ContractRequest request) {
@@ -116,13 +116,15 @@ public class NotificationService {
         //get project number, location, userDetails
         log.info("get project number, location, userDetails");
         Map<String, String> smsDetails = getDetailsForSMS(request, createdByUuid);
+        Map<String, Object> additionalField = setAdditionalFields(request,ContractServiceConstants.CONTRACTS_APPROVE_CREATOR_LOCALIZATION_CODE);
+
 
         log.info("build Message For Approve Action for WO Creator");
         message = buildMessageForApproveAction_WOCreator(contract, smsDetails, message);
-        SMSRequest smsRequest = SMSRequest.builder().mobileNumber(smsDetails.get("mobileNumber")).message(message).build();
 
         log.info("push Message For Approve Action for WO Creator");
-        producer.push(config.getSmsNotifTopic(), smsRequest);
+        checkAdditionalFieldAndPushONSmsTopic(message,additionalField,smsDetails);
+
     }
 
     private void pushNotificationToCreatorForDeclineAction(ContractRequest request) {
@@ -140,13 +142,15 @@ public class NotificationService {
         //get project number, location, userDetails
         log.info("get project number, location, userDetails");
         Map<String, String> smsDetails = getDetailsForSMS(request, createdByUuid);
+        Map<String, Object> additionalField = setAdditionalFields(request,ContractServiceConstants.CONTRACTS_DECLINE_CREATOR_LOCALIZATION_CODE);
+
 
         log.info("build Message For decline Action for WO Creator");
         message = buildMessageForDeclineAction_WOCreator(contract, smsDetails, message);
-        SMSRequest smsRequest = SMSRequest.builder().mobileNumber(smsDetails.get("mobileNumber")).message(message).build();
-
         log.info("push Message For decline Action for WO Creator");
-        producer.push(config.getSmsNotifTopic(), smsRequest);
+        checkAdditionalFieldAndPushONSmsTopic(message,additionalField,smsDetails);
+
+
     }
 
     private void pushNotificationToCreatorForAcceptAction(ContractRequest request) {
@@ -164,13 +168,12 @@ public class NotificationService {
         //get project number, location, userDetails
         log.info("get project number, location, userDetails");
         Map<String, String> smsDetails = getDetailsForSMS(request, createdByUuid);
+        Map<String, Object> additionalField = setAdditionalFields(request,ContractServiceConstants.CONTRACTS_ACCEPT_CREATOR_LOCALIZATION_CODE);
 
         log.info("build Message For Accept Action for WO Creator");
         message = buildMessageForAcceptAction_WOCreator(contract, smsDetails, message);
-        SMSRequest smsRequest = SMSRequest.builder().mobileNumber(smsDetails.get("mobileNumber")).message(message).build();
-
         log.info("push Message For Accept Action for WO Creator");
-        producer.push(config.getSmsNotifTopic(), smsRequest);
+        checkAdditionalFieldAndPushONSmsTopic(message,additionalField,smsDetails);
     }
 
     private void pushNotificationToCBOForApproveAction(ContractRequest request) {
@@ -183,22 +186,51 @@ public class NotificationService {
         }
 
         //get org-details: orgName, contactPersonNames, mobileNumbers
-        // Map<String, List<String>> orgDetails = getOrgDetailsForCBOAdmin(request);
+        //Map<String, List<String>> orgDetails = getOrgDetailsForCBOAdmin(request);
 
-        Map<String, List<String>> projDetails = getProjectName(request);
+        Map<String, List<String>> projDetails = getProjectNumber(request);
+        Map<String, Object> additionalField = setAdditionalFields(request,ContractServiceConstants.CONTRACTS_APPROVE_CBO_LOCALIZATION_CODE);
+
 
 
         for (int i = 0; i < projDetails.get("mobileNumbers").size(); i++) {
             Map<String,String> smsDetails=new HashMap<>();
-
             smsDetails.put("projectId",projDetails.get("projectId").get(0));
-//            smsDetails.put("projectName",orgDetails.get("projectName").get(0));
-//            smsDetails.put("personName",orgDetails.get("contactPersonNames").get(i));
             smsDetails.put("mobileNumber",projDetails.get("mobileNumbers").get(i));
-
-
             String customizedMessage = buildMessageForApproveAction_WO_CBO(contract, smsDetails, message);
+            checkAdditionalFieldAndPushONSmsTopic(customizedMessage,additionalField,smsDetails);
+
+        }
+    }
+
+    private Map<String,Object> setAdditionalFields(ContractRequest request, String localizationCode){
+        Map<String, Object> additionalField=new HashMap<>();
+        String tenantId = request.getContract().getTenantId();
+        String rootTenantId = tenantId.split("\\.")[0];
+        System.out.print("tenantId::::::"+ rootTenantId);
+        if(rootTenantId.equalsIgnoreCase("od")){
+            additionalField.put("templateCode",localizationCode);
+            additionalField.put("requestInfo",request.getRequestInfo());
+            additionalField.put("tenantId",request.getContract().getTenantId());
+        }
+        return additionalField;
+    }
+
+    private void checkAdditionalFieldAndPushONSmsTopic( String customizedMessage , Map<String, Object> additionalField,Map<String,String> smsDetails){
+
+
+        if(!additionalField.isEmpty()){
+            WorksSmsRequest smsRequest=WorksSmsRequest.builder().message(customizedMessage).additionalFields(additionalField)
+                    .mobileNumber(smsDetails.get("mobileNumber")).build();
+
+
+            System.out.println("SMS message:::::" + smsRequest.toString());
+            log.info("SMS message:::::" + smsRequest.toString());
+            producer.push(config.getMuktaNotificationTopic(), smsRequest);
+
+        }else{
             SMSRequest smsRequest = SMSRequest.builder().mobileNumber(smsDetails.get("mobileNumber")).message(customizedMessage).build();
+            System.out.println("SMS message without additional fields:::::" + smsRequest.toString());
             producer.push(config.getSmsNotifTopic(), smsRequest);
         }
     }
@@ -220,7 +252,7 @@ public class NotificationService {
         List<LineItems> lineItems = request.getContract().getLineItems();
         Map<String, List<LineItems>> lineItemsMap = lineItems.stream().collect(Collectors.groupingBy(LineItems::getEstimateId));
         List<Estimate> estimates = estimateServiceUtil.fetchActiveEstimates(requestInfo, tenantId, lineItemsMap.keySet());
-//        Map<String, String> projectDetails = projectServiceUtil.getProjectDetails(requestInfo, estimates.get(0));
+        Map<String, String> projectDetails = projectServiceUtil.getProjectDetails(requestInfo, estimates.get(0));
 
         //As the new template only requires the project id so fetching it in this class only rather than calling the util method
         String projectId = estimates.get(0).getProjectId();
@@ -235,7 +267,7 @@ public class NotificationService {
 
         smsDetails.put("orgName",orgDetails.get("orgName").get(0));
         smsDetails.putAll(userDetailsForSMS);
-        smsDetails.put("projectId",projectId);
+        smsDetails.put("projectId",projectDetails.get("projectNumber"));
 
        /* smsDetails.putAll(projectDetails);
         smsDetails.putAll(locationName);*/
@@ -243,7 +275,7 @@ public class NotificationService {
         return smsDetails;
     }
 
-    private Map<String, List<String>> getProjectName(ContractRequest request) {
+    private Map<String, List<String>> getProjectNumber(ContractRequest request) {
 
         RequestInfo requestInfo = request.getRequestInfo();
         Contract contract = request.getContract();
@@ -255,15 +287,14 @@ public class NotificationService {
         List<Estimate> estimates = estimateServiceUtil.fetchActiveEstimates(requestInfo, tenantId, lineItemsMap.keySet());
 
         //As the new template only requires the project id so fetching it in this class only rather than calling the util method
-        String projectId = estimates.get(0).getProjectId();
-        // Map<String, String> projectDetails = projectServiceUtil.getProjectDetails(requestInfo, estimates.get(0));
+         Map<String, String> projectDetails = projectServiceUtil.getProjectDetails(requestInfo, estimates.get(0));
 
         // Fetching org mobile number and maintaining in the map
         Map<String,List<String>> projectAndOrgDetails= organisationServiceUtil.getOrganisationInfo(request);
 
 //        orgDetails.put("projectName", Collections.singletonList(projectDetails.get("projectName")));
 
-        projectAndOrgDetails.put("projectId",Collections.singletonList(projectId));
+        projectAndOrgDetails.put("projectId",Collections.singletonList(projectDetails.get("projectNumber")));
 
         return projectAndOrgDetails;
     }
@@ -317,9 +348,10 @@ public class NotificationService {
      */
     public String getMessage(ContractRequest request, String msgCode) {
         String rootTenantId = request.getContract().getTenantId().split("\\.")[0];
+        String locale=request.getRequestInfo().getMsgId().split("\\|")[1];
         Map<String, Map<String, String>> localizedMessageMap = getLocalisedMessages(request.getRequestInfo(), rootTenantId,
-                ContractServiceConstants.CONTRACTS_NOTIFICATION_ENG_LOCALE_CODE, ContractServiceConstants.CONTRACTS_MODULE_CODE);
-        return localizedMessageMap.get(ContractServiceConstants.CONTRACTS_NOTIFICATION_ENG_LOCALE_CODE + "|" + rootTenantId).get(msgCode);
+                locale, ContractServiceConstants.CONTRACTS_MODULE_CODE);
+        return localizedMessageMap.get(locale+ "|" + rootTenantId).get(msgCode);
     }
 
     /**

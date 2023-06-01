@@ -73,6 +73,7 @@ public class ContractServiceConstants {
     public static final String PROJECT_BOUNDARY_CODE ="$.Project.*.address.boundary";
 
     public static final String PROJECT_BOUNDARY_TYPE_CODE ="$.Project.*.address.boundaryType";
+    public static final String PROJECT_NUMBER_CODE ="$.Project.*.projectNumber";
 
     //Location Service Constants
     public static final String LOCATION_BOUNDARY_NAME_CODE ="$.*.*.boundary.*.name";

@@ -74,11 +74,14 @@ public class ProjectServiceUtil {
         List<String> projectNames = null;
         List<String> boundaries = null;
         List<String> boundaryTypes=null;
+        List<String> projectNumbers=null;
 
         try {
             projectNames = JsonPath.read(projectRes, PROJECT_NAME_CODE);
             boundaries = JsonPath.read(projectRes,PROJECT_BOUNDARY_CODE);
             boundaryTypes = JsonPath.read(projectRes,PROJECT_BOUNDARY_TYPE_CODE);
+            projectNumbers=JsonPath.read(projectRes, PROJECT_NUMBER_CODE);
+
 
         } catch (Exception e) {
             throw new CustomException("PARSING_ERROR", "Failed to parse HRMS response");
@@ -87,6 +90,7 @@ public class ProjectServiceUtil {
         projectDetails.put("projectName", projectNames.get(0));
         projectDetails.put("boundary", boundaries.get(0));
         projectDetails.put("boundaryType", boundaryTypes.get(0));
+        projectDetails.put("projectNumber",projectNumbers.get(0));
 
         return projectDetails;
     }
