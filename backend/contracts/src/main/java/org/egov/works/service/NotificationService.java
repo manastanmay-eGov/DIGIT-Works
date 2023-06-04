@@ -251,13 +251,11 @@ public class NotificationService {
         List<Estimate> estimates = estimateServiceUtil.fetchActiveEstimates(requestInfo, tenantId, lineItemsMap.keySet());
         Map<String, String> projectDetails = projectServiceUtil.getProjectDetails(requestInfo, estimates.get(0));
 
-        //As the new template only requires the project id so fetching it in this class only rather than calling the util method
-        String projectId = estimates.get(0).getProjectId();
 
         //get location name from boundary type
-       /* String boundaryCode = projectDetails.get("boundary");
+        String boundaryCode = projectDetails.get("boundary");
         String boundaryType=projectDetails.get("boundaryType");
-        Map<String, String> locationName = locationServiceUtil.getLocationName(tenantId, requestInfo, boundaryCode, boundaryType);*/
+        Map<String, String> locationName = locationServiceUtil.getLocationName(tenantId, requestInfo, boundaryCode, boundaryType);
 
         //get org name
         Map<String, List<String>> orgDetails = organisationServiceUtil.getOrganisationInfo(request);
@@ -266,8 +264,8 @@ public class NotificationService {
         smsDetails.putAll(userDetailsForSMS);
         smsDetails.put("projectId",projectDetails.get("projectNumber"));
 
-       /* smsDetails.putAll(projectDetails);
-        smsDetails.putAll(locationName);*/
+        smsDetails.putAll(projectDetails);
+        smsDetails.putAll(locationName);
 
         return smsDetails;
     }
@@ -289,7 +287,7 @@ public class NotificationService {
         // Fetching org mobile number and maintaining in the map
         Map<String,List<String>> projectAndOrgDetails= organisationServiceUtil.getOrganisationInfo(request);
 
-//        orgDetails.put("projectName", Collections.singletonList(projectDetails.get("projectName")));
+        projectAndOrgDetails.put("projectName", Collections.singletonList(projectDetails.get("projectName")));
 
         projectAndOrgDetails.put("projectId",Collections.singletonList(projectDetails.get("projectNumber")));
 
@@ -390,10 +388,12 @@ public class NotificationService {
     }
 
     public String buildMessageForApproveAction_WOCreator(Contract contract, Map<String, String> userDetailsForSMS, String message) {
-        message = message.replace("{CONTRACT_NUMBER}", contract.getContractNumber())
+      /*  message = message.replace("{CONTRACT_NUMBER}", contract.getContractNumber())
                 .replace("{PROJECT_NAME}", userDetailsForSMS.get("projectName"))
                 .replace("{LOCATION}", userDetailsForSMS.get("locationName"))
-                .replace("{organisationName}", userDetailsForSMS.get("orgName"));
+                .replace("{organisationName}", userDetailsForSMS.get("orgName"))*/
+        message = message.replace("{workorderno}",contract.getContractNumber())
+                .replace("{projectid}", userDetailsForSMS.get("projectId"));
         return message;
     }
 
