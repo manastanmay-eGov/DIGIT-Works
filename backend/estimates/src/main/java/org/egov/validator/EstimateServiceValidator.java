@@ -103,7 +103,7 @@ public class EstimateServiceValidator {
         List<Estimate> estimateList = estimateRepository.getEstimate(searchCriteria);
         if (!CollectionUtils.isEmpty(estimateList)) {
             log.error("Create :: Estimate is already created for this project");
-            throw new CustomException("INVALID_ESTIMATE_CREATE_REQUEST", "This kubeProject is already associated to a different Estimate.");
+            throw new CustomException("INVALID_ESTIMATE_CREATE_REQUEST", "This Project is already associated to a different Estimate.");
         }
     }
 
