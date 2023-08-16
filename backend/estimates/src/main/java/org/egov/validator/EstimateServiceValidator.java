@@ -63,11 +63,14 @@ public class EstimateServiceValidator {
         Object mdmsDataForOverHead = mdmsUtils.mDMSCallForOverHeadCategory(request, rootTenantId);
 
         validateMDMSData(estimate, mdmsData, mdmsDataForOverHead, errorMap, true);
+        
         validateProjectId(request, errorMap);
 
         if (!errorMap.isEmpty())
             throw new CustomException(errorMap);
     }
+
+ 
 
     private void validateProjectId(EstimateRequest estimateRequest, Map<String, String> errorMap) {
         log.info("EstimateServiceValidator::validateProjectId");
@@ -86,6 +89,22 @@ public class EstimateServiceValidator {
 
         if (projects == null || projects.isEmpty())
             throw new CustomException("PROJECT_ID", "The project id : " + estimateRequest.getEstimate().getProjectId() + " is invalid");
+
+        validateCreateRequestedProjectIdAgainstDB(estimateRequest);
+    }
+
+    private void validateCreateRequestedProjectIdAgainstDB(EstimateRequest estimateRequest) {
+        Estimate estimate=estimateRequest.getEstimate();
+
+        List<String> estimateIds=new ArrayList<>();
+        estimateIds.add(estimate.getId());
+
+        EstimateSearchCriteria searchCriteria = EstimateSearchCriteria.builder().ids(estimateIds).tenantId(estimate.getTenantId()).build();
+        List<Estimate> estimateList = estimateRepository.getEstimate(searchCriteria);
+        if (!CollectionUtils.isEmpty(estimateList)) {
+            log.error("Create :: Estimate is already created for this project");
+            throw new CustomException("INVALID_ESTIMATE_CREATE_REQUEST", "This kubeProject is already associated to a different Estimate.");
+        }
     }
 
     private void validateWorkFlow(Workflow workflow, Map<String, String> errorMap) {
